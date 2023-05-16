@@ -1,4 +1,4 @@
-# <div align="center"> Solucion INPI </div>
+# <div align="center"> Open Magazine </div>
 
 </br>
 
