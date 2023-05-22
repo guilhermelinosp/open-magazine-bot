@@ -3,7 +3,6 @@ using OpenMagazine.Core;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Edge;
 using System.IO.Compression;
-using System.Text.RegularExpressions;
 using System.Xml;
 using Formatting = Newtonsoft.Json.Formatting;
 
@@ -91,30 +90,21 @@ namespace OpenMagazine.INPI
 					var xmlDocument = new XmlDocument();
 					xmlDocument.Load(xmlFilePath);
 
-					var xmlNode = xmlDocument.SelectSingleNode("revista");
+					var jsonFile = JsonConvert.SerializeXmlNode(xmlDocument.SelectSingleNode("revista"), Formatting.Indented, true);
 
-					if (xmlNode != null)
+					var jsonFilePath = Path.ChangeExtension(xmlFilePath, ".json");
+
+					if (File.Exists(jsonFilePath))
 					{
-						var jsonFile = JsonConvert.SerializeXmlNode(xmlNode, Formatting.Indented, true);
-						jsonFile = Regex.Replace(jsonFile, @"[@#]", "");
-
-						var jsonFilePath = Path.ChangeExtension(xmlFilePath, ".json");
-
-						if (File.Exists(jsonFilePath))
-						{
-							File.Delete(jsonFilePath);
-						}
-
-						await File.WriteAllTextAsync(jsonFilePath, jsonFile);
-
-						await Task.Delay(500);
-
-						File.Delete(xmlFilePath);
+						File.Delete(jsonFilePath);
 					}
-					else
-					{
-						await Console.Error.WriteLineAsync($"{DateTime.Now} - Error ConvertFiles(): \"{xmlFilePath}\" does not contain a \"revista\" node.");
-					}
+
+					await File.WriteAllTextAsync(jsonFilePath, jsonFile);
+
+					await Task.Delay(500);
+
+					File.Delete(xmlFilePath);
+
 				}
 			}
 			catch (Exception ex)
@@ -134,28 +124,28 @@ namespace OpenMagazine.INPI
 						continue;
 					}
 
-					var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
+					var content = await File.ReadAllTextAsync(jsonFilePath);
 					var fileName = Path.GetFileNameWithoutExtension(jsonFilePath);
 
 					if (fileName.Contains("RM2"))
 					{
-						await PatentesProcess.AnalyzeJson(jsonContent);
+						await MarcasProcess.AnalyzeJson(content);
 					}
 					else if (fileName.Contains("P2"))
 					{
-						await PatentesProcess.AnalyzeJson(jsonContent);
+						await PatentesProcess.AnalyzeJson(content);
 					}
 					else if (fileName.Contains("DI2"))
 					{
-						await DesenhosProcess.AnalyzeJson(jsonContent);
+						await DesenhosProcess.AnalyzeJson(content);
 					}
 					else if (fileName.Contains("PC2"))
 					{
-						await ProgramasProcess.AnalyzeJson(jsonContent);
+						await ProgramasProcess.AnalyzeJson(content);
 					}
 					else if (fileName.Contains("CT2"))
 					{
-						await ContratosProcess.AnalyzeJson(jsonContent);
+						await ContratosProcess.AnalyzeJson(content);
 					}
 					else
 					{
